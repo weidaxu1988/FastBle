@@ -1,24 +1,32 @@
 package com.clj.fastble.scan;
 
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
+
+import com.clj.fastble.utils.UuidUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by 陈利健 on 2016/9/2.
  * 一段限制时间内搜索所有设备
  */
-public abstract class ListScanCallback extends PeriodScanCallback {
+public abstract class UuidFilterableListScanCallback extends ListScanCallback {
 
     /**
-     * 所有被发现的设备集合
+     * Service Uuid 过滤集合
      */
-    protected List<BluetoothDevice> deviceList = new ArrayList<>();
+    private List<UUID> uuidList = new ArrayList<>();
 
-    public ListScanCallback(long timeoutMillis) {
+    public UuidFilterableListScanCallback(UUID[] uuids, long timeoutMillis) {
         super(timeoutMillis);
+        if (uuids == null) {
+            throw new IllegalArgumentException("start scan, uuids can not be null!");
+        } else {
+            uuidList = Arrays.asList(uuids);
+        }
     }
 
     @Override
@@ -27,7 +35,11 @@ public abstract class ListScanCallback extends PeriodScanCallback {
             return;
 
         if (!deviceList.contains(device)) {
-            deviceList.add(device);
+            // 是否符合目标service uuid
+            List<UUID> scanUuids = UuidUtil.parseUuids(scanRecord);
+            if (UuidUtil.hasWantedUuid(uuidList, scanUuids)) {
+                deviceList.add(device);
+            }
         }
     }
 
